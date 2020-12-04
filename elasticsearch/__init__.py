@@ -18,13 +18,17 @@
 # flake8: noqa
 from __future__ import absolute_import
 
-VERSION = (7, 9, 0)
-__version__ = VERSION
-__versionstr__ = "7.9.0a1"
-
+import re
 import sys
 import logging
 import warnings
+
+from ._version import __versionstr__
+
+_major, _minor, _patch = [
+    int(x) for x in re.search(r"^(\d+)\.(\d+)\.(\d+)", __versionstr__).groups()
+]
+VERSION = __version__ = (_major, _minor, _patch)
 
 logger = logging.getLogger("elasticsearch")
 logger.addHandler(logging.NullHandler())

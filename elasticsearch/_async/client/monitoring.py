@@ -23,7 +23,13 @@ class MonitoringClient(NamespacedClient):
     async def bulk(self, body, doc_type=None, params=None, headers=None):
         """
         Used by the monitoring features to send monitoring data.
+
         `<https://www.elastic.co/guide/en/elasticsearch/reference/7.x/monitor-elasticsearch-cluster.html>`_
+
+        .. warning::
+
+            This API is **experimental** so may include breaking changes
+            or be removed in a future version
 
         :arg body: The operation definition and data (action-data
             pairs), separated by newlines

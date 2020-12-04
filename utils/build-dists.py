@@ -23,6 +23,7 @@ Only requires 'name' in 'setup.py' and the directory to be changed.
 import tempfile
 import os
 import shlex
+import sys
 import re
 import contextlib
 import shutil
@@ -66,7 +67,7 @@ def test_dist(dist):
         # Build the venv and install the dist
         run("python", "-m", "venv", os.path.join(tmp_dir, "venv"))
         venv_python = os.path.join(tmp_dir, "venv/bin/python")
-        run(venv_python, "-m", "pip", "install", "-U", "pip")
+        run(venv_python, "-m", "pip", "install", "-U", "pip", "mypy")
         run(venv_python, "-m", "pip", "install", dist)
 
         # Test the sync namespaces
@@ -106,6 +107,17 @@ def test_dist(dist):
             f"from {dist_name}.helpers import async_scan, async_bulk, async_streaming_bulk, async_reindex",
         )
 
+        # Only need to test 'async_types' for non-aliased package
+        # since 'aliased_types' tests both async and sync.
+        if dist_name == "elasticsearch":
+            run(
+                venv_python,
+                "-m",
+                "mypy",
+                "--strict",
+                os.path.join(base_dir, "test_elasticsearch/test_types/async_types.py"),
+            )
+
         # Ensure that the namespaces are correct for the dist
         for suffix in ("", "1", "2", "5", "6", "7", "8", "9", "10"):
             distx_name = f"elasticsearch{suffix}"
@@ -114,6 +126,27 @@ def test_dist(dist):
                 "-c",
                 f"import {distx_name}",
                 expect_exit_code=256 if distx_name != dist_name else 0,
+            )
+
+        # Check that sync types work for 'elasticsearch' and
+        # that aliased types work for 'elasticsearchX'
+        if dist_name == "elasticsearch":
+            run(
+                venv_python,
+                "-m",
+                "mypy",
+                "--strict",
+                os.path.join(base_dir, "test_elasticsearch/test_types/sync_types.py"),
+            )
+        else:
+            run(
+                venv_python,
+                "-m",
+                "mypy",
+                "--strict",
+                os.path.join(
+                    base_dir, "test_elasticsearch/test_types/aliased_types.py"
+                ),
             )
 
         # Uninstall the dist, see that we can't import things anymore
@@ -127,12 +160,62 @@ def test_dist(dist):
 
 
 def main():
-    run("rm", "-rf", "build/", "dist/", "*.egg-info", ".eggs")
+    run("git", "checkout", "--", "setup.py", "elasticsearch/")
+    run("rm", "-rf", "build/", "dist/*", "*.egg-info", ".eggs")
 
     # Grab the major version to be used as a suffix.
-    setup_py_path = os.path.join(base_dir, "setup.py")
-    with open(setup_py_path) as f:
-        major_version = re.search(r"^VERSION = \((\d+),", f.read(), re.M).group(1)
+    version_path = os.path.join(base_dir, "elasticsearch/_version.py")
+    with open(version_path) as f:
+        version = re.search(
+            r"^__versionstr__\s+=\s+[\"\']([^\"\']+)[\"\']", f.read(), re.M
+        ).group(1)
+    major_version = version.split(".")[0]
+
+    # If we're handed a version from the build manager we
+    # should check that the version is correct or write
+    # a new one.
+    if len(sys.argv) >= 2:
+        # 'build_version' is what the release manager wants,
+        # 'expect_version' is what we're expecting to compare
+        # the package version to before building the dists.
+        build_version = expect_version = sys.argv[1]
+
+        # Any prefixes in the version specifier mean we're making
+        # a pre-release which will modify __versionstr__ locally
+        # and not produce a git tag.
+        if any(x in build_version for x in ("-SNAPSHOT", "-rc", "-alpha", "-beta")):
+            # If a snapshot, then we add '+dev'
+            if "-SNAPSHOT" in build_version:
+                version = version + "+dev"
+            # alpha/beta/rc -> aN/bN/rcN
+            else:
+                pre_number = re.search(r"-(a|b|rc)(?:lpha|eta|)(\d+)$", expect_version)
+                version = version + pre_number.group(1) + pre_number.group(2)
+
+            expect_version = re.sub(
+                r"(?:-(?:SNAPSHOT|alpha\d+|beta\d+|rc\d+))+$", "", expect_version
+            )
+            if expect_version.endswith(".x"):
+                expect_version = expect_version[:-1]
+
+            # For snapshots we ensure that the version in the package
+            # at least *starts* with the version. This is to support
+            # build_version='7.x-SNAPSHOT'.
+            if not version.startswith(expect_version):
+                print(
+                    "Version of package (%s) didn't match the "
+                    "expected release version (%s)" % (version, build_version)
+                )
+                exit(1)
+
+        # A release that will be tagged, we want
+        # there to be no '+dev', etc.
+        elif expect_version != version:
+            print(
+                "Version of package (%s) didn't match the "
+                "expected release version (%s)" % (version, build_version)
+            )
+            exit(1)
 
     for suffix in ("", major_version):
         run("rm", "-rf", "build/", "*.egg-info", ".eggs")
@@ -143,14 +226,30 @@ def main():
             os.path.join(base_dir, "elasticsearch%s" % suffix),
         )
 
+        # Ensure that the version within 'elasticsearch/_version.py' is correct.
+        version_path = os.path.join(base_dir, f"elasticsearch{suffix}/_version.py")
+        with open(version_path) as f:
+            version_data = f.read()
+        version_data = re.sub(
+            r"__versionstr__ = \"[^\"]+\"",
+            '__versionstr__ = "%s"' % version,
+            version_data,
+        )
+        with open(version_path, "w") as f:
+            f.truncate()
+            f.write(version_data)
+
         # Rewrite setup.py with the new name.
+        setup_py_path = os.path.join(base_dir, "setup.py")
         with open(setup_py_path) as f:
             setup_py = f.read()
         with open(setup_py_path, "w") as f:
             f.truncate()
+            assert 'package_name = "elasticsearch"' in setup_py
             f.write(
                 setup_py.replace(
-                    'name="elasticsearch",', 'name="elasticsearch%s",' % suffix
+                    'package_name = "elasticsearch"',
+                    'package_name = "elasticsearch%s"' % suffix,
                 )
             )
 
@@ -163,8 +262,11 @@ def main():
             run("rm", "-rf", "elasticsearch%s/" % suffix)
 
     # Test everything that got created
-    for dist in os.listdir(os.path.join(base_dir, "dist")):
+    dists = os.listdir(os.path.join(base_dir, "dist"))
+    assert len(dists) == 4
+    for dist in dists:
         test_dist(os.path.join(base_dir, "dist", dist))
+    os.system("chmod a+w dist/*")
 
     # After this run 'python -m twine upload dist/*'
     print(

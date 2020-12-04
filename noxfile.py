@@ -27,7 +27,7 @@ SOURCE_FILES = (
 )
 
 
-@nox.session(python=["2.7", "3.4", "3.5", "3.6", "3.7", "3.8"])
+@nox.session(python=["2.7", "3.4", "3.5", "3.6", "3.7", "3.8", "3.9"])
 def test(session):
     session.install(".")
     session.install("-r", "dev-requirements.txt")
@@ -40,7 +40,7 @@ def blacken(session):
     session.install("black")
 
     session.run("black", "--target-version=py27", *SOURCE_FILES)
-    session.run("python", "utils/license_headers.py", "fix", *SOURCE_FILES)
+    session.run("python", "utils/license-headers.py", "fix", *SOURCE_FILES)
 
     lint(session)
 
@@ -51,7 +51,7 @@ def lint(session):
 
     session.run("black", "--target-version=py27", "--check", *SOURCE_FILES)
     session.run("flake8", *SOURCE_FILES)
-    session.run("python", "utils/license_headers.py", "check", *SOURCE_FILES)
+    session.run("python", "utils/license-headers.py", "check", *SOURCE_FILES)
 
     # Workaround to make '-r' to still work despite uninstalling aiohttp below.
     session.run("python", "-m", "pip", "install", "aiohttp")
@@ -59,11 +59,12 @@ def lint(session):
     # Run mypy on the package and then the type examples separately for
     # the two different mypy use-cases, ourselves and our users.
     session.run("mypy", "--strict", "elasticsearch/")
-    session.run("mypy", "--strict", "test_elasticsearch/test_types/")
+    session.run("mypy", "--strict", "test_elasticsearch/test_types/sync_types.py")
+    session.run("mypy", "--strict", "test_elasticsearch/test_types/async_types.py")
 
     # Make sure we don't require aiohttp to be installed for users to
     # receive type hint information from mypy.
-    session.run("python", "-m", "pip", "uninstall", "--yes", "aiohttp", "yarl")
+    session.run("python", "-m", "pip", "uninstall", "--yes", "aiohttp")
     session.run("mypy", "--strict", "elasticsearch/")
     session.run("mypy", "--strict", "test_elasticsearch/test_types/sync_types.py")
 

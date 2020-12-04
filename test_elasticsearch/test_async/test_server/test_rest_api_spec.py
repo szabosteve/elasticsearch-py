@@ -21,7 +21,6 @@ some integration tests. These files are shared among all official Elasticsearch
 clients.
 """
 import pytest
-from shutil import rmtree
 import warnings
 import inspect
 
@@ -56,37 +55,6 @@ class AsyncYamlRunner(YamlRunner):
     async def teardown(self):
         if self._teardown_code:
             await self.run_code(self._teardown_code)
-
-        for repo, definition in (
-            await self.client.snapshot.get_repository(repository="_all")
-        ).items():
-            await self.client.snapshot.delete_repository(repository=repo)
-            if definition["type"] == "fs":
-                rmtree(
-                    "/tmp/%s" % definition["settings"]["location"], ignore_errors=True
-                )
-
-        # stop and remove all ML stuff
-        if await self._feature_enabled("ml"):
-            await self.client.ml.stop_datafeed(datafeed_id="*", force=True)
-            for feed in (await self.client.ml.get_datafeeds(datafeed_id="*"))[
-                "datafeeds"
-            ]:
-                await self.client.ml.delete_datafeed(datafeed_id=feed["datafeed_id"])
-
-            await self.client.ml.close_job(job_id="*", force=True)
-            for job in (await self.client.ml.get_jobs(job_id="*"))["jobs"]:
-                await self.client.ml.delete_job(
-                    job_id=job["job_id"], wait_for_completion=True, force=True
-                )
-
-        # stop and remove all Rollup jobs
-        if await self._feature_enabled("rollup"):
-            for rollup in (await self.client.rollup.get_jobs(id="*"))["jobs"]:
-                await self.client.rollup.stop_job(
-                    id=rollup["config"]["id"], wait_for_completion=True
-                )
-                await self.client.rollup.delete_job(id=rollup["config"]["id"])
 
     async def es_version(self):
         global ES_VERSION

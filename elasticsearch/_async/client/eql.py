@@ -23,7 +23,13 @@ class EqlClient(NamespacedClient):
     async def search(self, index, body, params=None, headers=None):
         """
         Returns results matching a query expressed in Event Query Language (EQL)
+
         `<https://www.elastic.co/guide/en/elasticsearch/reference/7.x/eql-search-api.html>`_
+
+        .. warning::
+
+            This API is **beta** so may include breaking changes
+            or be removed in a future version
 
         :arg index: The name of the index to scope the operation
         :arg body: Eql request body. Use the `query` to limit the query
@@ -53,7 +59,13 @@ class EqlClient(NamespacedClient):
         """
         Deletes an async EQL search by ID. If the search is still running, the search
         request will be cancelled. Otherwise, the saved search results are deleted.
+
         `<https://www.elastic.co/guide/en/elasticsearch/reference/7.x/eql-search-api.html>`_
+
+        .. warning::
+
+            This API is **beta** so may include breaking changes
+            or be removed in a future version
 
         :arg id: The async search ID
         """
@@ -69,7 +81,13 @@ class EqlClient(NamespacedClient):
         """
         Returns async results from previously executed Event Query Language (EQL)
         search
+
         `<https://www.elastic.co/guide/en/elasticsearch/reference/7.x/eql-search-api.html>`_
+
+        .. warning::
+
+            This API is **beta** so may include breaking changes
+            or be removed in a future version
 
         :arg id: The async search ID
         :arg keep_alive: Update the time interval in which the results

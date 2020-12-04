@@ -18,7 +18,7 @@ jobs:
           python3.7 -m pip install setuptools wheel twine
       - name: Build packages
         run: |
-          python3.7 setup.py sdist bdist_wheel
+          python3.7 utils/build-dists.py
       - name: Check packages
         run: |
           set -exo pipefail;
@@ -60,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [2.7, 3.5, 3.6, 3.7, 3.8]
+        python-version: [2.7, 3.5, 3.6, 3.7, 3.8, 3.9]
 
     steps:
       - name: Checkout Repository
