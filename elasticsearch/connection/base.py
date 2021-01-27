@@ -15,26 +15,26 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-import logging
 import binascii
 import gzip
 import io
+import logging
 import re
-from platform import python_version
 import warnings
+from platform import python_version
 
 try:
     import simplejson as json
 except ImportError:
     import json
 
-from ..exceptions import (
-    TransportError,
-    ImproperlyConfigured,
-    ElasticsearchDeprecationWarning,
-    HTTP_EXCEPTIONS,
-)
 from .. import __versionstr__
+from ..exceptions import (
+    HTTP_EXCEPTIONS,
+    ElasticsearchWarning,
+    ImproperlyConfigured,
+    TransportError,
+)
 
 logger = logging.getLogger("elasticsearch")
 
@@ -67,6 +67,8 @@ class Connection(object):
         For tracing all requests made by this transport.
     """
 
+    HTTP_CLIENT_META = None
+
     def __init__(
         self,
         host="localhost",
@@ -79,6 +81,7 @@ class Connection(object):
         cloud_id=None,
         api_key=None,
         opaque_id=None,
+        meta_header=True,
         **kwargs
     ):
 
@@ -148,6 +151,10 @@ class Connection(object):
         self.url_prefix = url_prefix
         self.timeout = timeout
 
+        if not isinstance(meta_header, bool):
+            raise TypeError("meta_header must be of type bool")
+        self.meta_header = meta_header
+
     def __repr__(self):
         return "<%s: %s>" % (self.__class__.__name__, self.host)
 
@@ -190,7 +197,7 @@ class Connection(object):
                 warning_messages.append(header)
 
         for message in warning_messages:
-            warnings.warn(message, category=ElasticsearchDeprecationWarning)
+            warnings.warn(message, category=ElasticsearchWarning)
 
     def _pretty_json(self, data):
         # pretty JSON in tracer curl logs

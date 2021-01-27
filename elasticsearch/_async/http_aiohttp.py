@@ -16,21 +16,23 @@
 #  under the License.
 
 import asyncio
-import ssl
 import os
-import urllib3  # type: ignore
+import ssl
 import warnings
-from ._extra_imports import aiohttp_exceptions, aiohttp, yarl
-from .compat import get_running_loop
-from ..connection import Connection
+
+import urllib3  # type: ignore
+
 from ..compat import urlencode
+from ..connection.base import Connection
 from ..exceptions import (
     ConnectionError,
     ConnectionTimeout,
     ImproperlyConfigured,
     SSLError,
 )
-
+from ..utils import _client_meta_version
+from ._extra_imports import aiohttp, aiohttp_exceptions, yarl
+from .compat import get_running_loop
 
 # sentinel value for `verify_certs`.
 # This is used to detect if a user is passing in a value
@@ -68,6 +70,9 @@ class AsyncConnection(Connection):
 
 
 class AIOHttpConnection(AsyncConnection):
+
+    HTTP_CLIENT_META = ("ai", _client_meta_version(aiohttp.__version__))
+
     def __init__(
         self,
         host="localhost",

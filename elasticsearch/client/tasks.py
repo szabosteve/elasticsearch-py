@@ -16,7 +16,8 @@
 #  under the License.
 
 import warnings
-from .utils import NamespacedClient, query_params, _make_path, SKIP_IN_PATH
+
+from .utils import SKIP_IN_PATH, NamespacedClient, _make_path, query_params
 
 
 class TasksClient(NamespacedClient):
@@ -34,6 +35,11 @@ class TasksClient(NamespacedClient):
         Returns a list of tasks.
 
         `<https://www.elastic.co/guide/en/elasticsearch/reference/7.x/tasks.html>`_
+
+        .. warning::
+
+            This API is **experimental** so may include breaking changes
+            or be removed in a future version
 
         :arg actions: A comma-separated list of actions that should be
             returned. Leave empty to return all.
@@ -59,6 +65,11 @@ class TasksClient(NamespacedClient):
         Cancels a task, if it can be cancelled through an API.
 
         `<https://www.elastic.co/guide/en/elasticsearch/reference/7.x/tasks.html>`_
+
+        .. warning::
+
+            This API is **experimental** so may include breaking changes
+            or be removed in a future version
 
         :arg task_id: Cancel the task with specified task id
             (node_id:task_number)
@@ -86,6 +97,11 @@ class TasksClient(NamespacedClient):
         Returns information about a task.
 
         `<https://www.elastic.co/guide/en/elasticsearch/reference/7.x/tasks.html>`_
+
+        .. warning::
+
+            This API is **experimental** so may include breaking changes
+            or be removed in a future version
 
         :arg task_id: Return the task with specified id
             (node_id:task_number)

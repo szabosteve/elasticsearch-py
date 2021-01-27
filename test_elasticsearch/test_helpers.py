@@ -16,11 +16,14 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-import mock
-import time
 import threading
+import time
+
+import mock
 import pytest
-from elasticsearch import helpers, Elasticsearch
+
+from elasticsearch import Elasticsearch, helpers
+from elasticsearch.helpers import actions
 from elasticsearch.serializer import JSONSerializer
 
 from .test_cases import TestCase
@@ -203,6 +206,20 @@ class TestChunkActions(TestCase):
             chunk = u"".join(chunk_actions)
             chunk = chunk if isinstance(chunk, str) else chunk.encode("utf-8")
             self.assertLessEqual(len(chunk), max_byte_size)
+
+    def test_add_helper_meta_to_kwargs(self):
+        self.assertEqual(
+            actions._add_helper_meta_to_kwargs({}, "b"),
+            {"params": {"__elastic_client_meta": (("h", "b"),)}},
+        )
+        self.assertEqual(
+            actions._add_helper_meta_to_kwargs({"params": {}}, "b"),
+            {"params": {"__elastic_client_meta": (("h", "b"),)}},
+        )
+        self.assertEqual(
+            actions._add_helper_meta_to_kwargs({"params": {"key": "value"}}, "b"),
+            {"params": {"__elastic_client_meta": (("h", "b"),), "key": "value"}},
+        )
 
 
 class TestExpandActions(TestCase):

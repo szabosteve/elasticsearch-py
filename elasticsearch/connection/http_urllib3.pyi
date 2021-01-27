@@ -16,8 +16,10 @@
 #  under the License.
 
 import ssl
-from typing import Optional, Mapping, Any, Union
+from typing import Any, Mapping, Optional, Union
+
 import urllib3  # type: ignore
+
 from .base import Connection
 
 def create_ssl_context(
@@ -51,5 +53,6 @@ class Urllib3HttpConnection(Connection):
         cloud_id: Optional[str] = ...,
         api_key: Optional[Any] = ...,
         opaque_id: Optional[str] = ...,
+        meta_header: bool = ...,
         **kwargs: Any
     ) -> None: ...

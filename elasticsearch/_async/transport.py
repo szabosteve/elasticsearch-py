@@ -17,19 +17,18 @@
 
 import asyncio
 import logging
-from itertools import chain
 import sys
+from itertools import chain
 
+from ..exceptions import (
+    ConnectionError,
+    ConnectionTimeout,
+    SerializationError,
+    TransportError,
+)
+from ..transport import Transport
 from .compat import get_running_loop
 from .http_aiohttp import AIOHttpConnection
-from ..transport import Transport
-from ..exceptions import (
-    TransportError,
-    ConnectionTimeout,
-    ConnectionError,
-    SerializationError,
-)
-
 
 logger = logging.getLogger("elasticsearch")
 
@@ -286,8 +285,8 @@ class AsyncTransport(Transport):
         """
         await self._async_call()
 
-        method, params, body, ignore, timeout = self._resolve_request_args(
-            method, params, body
+        method, headers, params, body, ignore, timeout = self._resolve_request_args(
+            method, headers, params, body
         )
 
         for attempt in range(self.max_retries + 1):

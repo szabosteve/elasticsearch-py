@@ -15,7 +15,7 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-from .utils import NamespacedClient, query_params, _make_path, SKIP_IN_PATH
+from .utils import SKIP_IN_PATH, NamespacedClient, _make_path, query_params
 
 
 class WatcherClient(NamespacedClient):
@@ -200,4 +200,21 @@ class WatcherClient(NamespacedClient):
         """
         return await self.transport.perform_request(
             "POST", "/_watcher/_stop", params=params, headers=headers
+        )
+
+    @query_params()
+    async def query_watches(self, body=None, params=None, headers=None):
+        """
+        Retrieves stored watches.
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/7.x/watcher-api-query-watches.html>`_
+
+        :arg body: From, size, query, sort and search_after
+        """
+        return await self.transport.perform_request(
+            "POST",
+            "/_watcher/_query/watches",
+            params=params,
+            headers=headers,
+            body=body,
         )

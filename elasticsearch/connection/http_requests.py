@@ -18,21 +18,24 @@
 import time
 import warnings
 
+from ..compat import string_types, urlencode
+from ..exceptions import (
+    ConnectionError,
+    ConnectionTimeout,
+    ImproperlyConfigured,
+    SSLError,
+)
+from ..utils import _client_meta_version
+from .base import Connection
+
 try:
     import requests
 
     REQUESTS_AVAILABLE = True
+    _REQUESTS_META_VERSION = _client_meta_version(requests.__version__)
 except ImportError:
     REQUESTS_AVAILABLE = False
-
-from .base import Connection
-from ..exceptions import (
-    ConnectionError,
-    ImproperlyConfigured,
-    ConnectionTimeout,
-    SSLError,
-)
-from ..compat import urlencode, string_types
+    _REQUESTS_META_VERSION = ""
 
 
 class RequestsHttpConnection(Connection):
@@ -58,6 +61,8 @@ class RequestsHttpConnection(Connection):
     :arg opaque_id: Send this value in the 'X-Opaque-Id' HTTP header
         For tracing all requests made by this transport.
     """
+
+    HTTP_CLIENT_META = ("rq", _REQUESTS_META_VERSION)
 
     def __init__(
         self,
@@ -142,7 +147,7 @@ class RequestsHttpConnection(Connection):
         url = self.base_url + url
         headers = headers or {}
         if params:
-            url = "%s?%s" % (url, urlencode(params or {}))
+            url = "%s?%s" % (url, urlencode(params))
 
         orig_body = body
         if self.http_compress and body:

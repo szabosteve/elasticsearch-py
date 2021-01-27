@@ -15,8 +15,10 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-from typing import Optional, Any, Mapping
+from typing import Any, Mapping, Optional
+
 import requests
+
 from .base import Connection
 
 class RequestsHttpConnection(Connection):
@@ -37,5 +39,6 @@ class RequestsHttpConnection(Connection):
         cloud_id: Optional[str] = ...,
         api_key: Optional[Any] = ...,
         opaque_id: Optional[str] = ...,
+        meta_header: bool = ...,
         **kwargs: Any
     ) -> None: ...

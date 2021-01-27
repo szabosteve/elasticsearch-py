@@ -15,20 +15,21 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-from ._extra_imports import aiohttp  # type: ignore
-from typing import Optional, Mapping, Collection, Union, Any, Tuple
+from typing import Any, Collection, Mapping, MutableMapping, Optional, Tuple, Union
+
 from ..connection import Connection
+from ._extra_imports import aiohttp  # type: ignore
 
 class AsyncConnection(Connection):
     async def perform_request(  # type: ignore
         self,
         method: str,
         url: str,
-        params: Optional[Mapping[str, Any]] = ...,
+        params: Optional[MutableMapping[str, Any]] = ...,
         body: Optional[bytes] = ...,
         timeout: Optional[Union[int, float]] = ...,
         ignore: Collection[int] = ...,
-        headers: Optional[Mapping[str, str]] = ...,
+        headers: Optional[MutableMapping[str, str]] = ...,
     ) -> Tuple[int, Mapping[str, str], str]: ...
     async def close(self) -> None: ...
 
@@ -55,6 +56,7 @@ class AIOHttpConnection(AsyncConnection):
         cloud_id: Optional[str] = ...,
         api_key: Optional[Any] = ...,
         opaque_id: Optional[str] = ...,
+        meta_header: bool = ...,
         loop: Any = ...,
         **kwargs: Any,
     ) -> None: ...

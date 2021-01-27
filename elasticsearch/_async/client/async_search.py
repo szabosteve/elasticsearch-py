@@ -15,7 +15,7 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-from .utils import NamespacedClient, SKIP_IN_PATH, query_params, _make_path
+from .utils import SKIP_IN_PATH, NamespacedClient, _make_path, query_params
 
 
 class AsyncSearchClient(NamespacedClient):
@@ -204,4 +204,24 @@ class AsyncSearchClient(NamespacedClient):
             params=params,
             headers=headers,
             body=body,
+        )
+
+    @query_params()
+    async def status(self, id, params=None, headers=None):
+        """
+        Retrieves the status of a previously submitted async search request given its
+        ID.
+
+        `<https://www.elastic.co/guide/en/elasticsearch/reference/7.x/async-search.html>`_
+
+        :arg id: The async search ID
+        """
+        if id in SKIP_IN_PATH:
+            raise ValueError("Empty value passed for a required argument 'id'.")
+
+        return await self.transport.perform_request(
+            "GET",
+            _make_path("_async_search", "status", id),
+            params=params,
+            headers=headers,
         )

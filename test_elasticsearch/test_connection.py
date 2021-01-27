@@ -16,33 +16,33 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-import re
-import ssl
 import gzip
 import io
-from mock import Mock, patch
-import urllib3
-from urllib3._collections import HTTPHeaderDict
+import re
+import ssl
 import warnings
-from requests.auth import AuthBase
 from platform import python_version
 
 import pytest
+import urllib3
+from mock import Mock, patch
+from requests.auth import AuthBase
+from urllib3._collections import HTTPHeaderDict
 
-from elasticsearch.exceptions import (
-    TransportError,
-    ConflictError,
-    RequestError,
-    NotFoundError,
-)
+from elasticsearch import __versionstr__
 from elasticsearch.connection import (
     Connection,
     RequestsHttpConnection,
     Urllib3HttpConnection,
 )
-from elasticsearch import __versionstr__
-from .test_cases import TestCase, SkipTest
+from elasticsearch.exceptions import (
+    ConflictError,
+    NotFoundError,
+    RequestError,
+    TransportError,
+)
 
+from .test_cases import SkipTest, TestCase
 
 CLOUD_ID_PORT_443 = "cluster:d2VzdGV1cm9wZS5henVyZS5lbGFzdGljLWNsb3VkLmNvbTo0NDMkZTdkZTlmMTM0NWU0NDkwMjgzZDkwM2JlNWI2ZjkxOWUk"
 CLOUD_ID_KIBANA = "cluster:d2VzdGV1cm9wZS5henVyZS5lbGFzdGljLWNsb3VkLmNvbSQ4YWY3ZWUzNTQyMGY0NThlOTAzMDI2YjQwNjQwODFmMiQyMDA2MTU1NmM1NDA0OTg2YmZmOTU3ZDg0YTZlYjUxZg=="
@@ -160,6 +160,16 @@ class TestBaseConnection(TestCase):
         ]:
             conn = Connection(**kwargs)
             assert conn.host == expected_host
+
+    def test_meta_header(self):
+        conn = Connection(meta_header=True)
+        assert conn.meta_header is True
+        conn = Connection(meta_header=False)
+        assert conn.meta_header is False
+
+        with pytest.raises(TypeError) as e:
+            Connection(meta_header=1)
+        assert str(e.value) == "meta_header must be of type bool"
 
 
 class TestUrllib3Connection(TestCase):

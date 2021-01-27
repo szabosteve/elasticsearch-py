@@ -20,16 +20,17 @@ Dynamically generated set of TestCases based on set of yaml files describing
 some integration tests. These files are shared among all official Elasticsearch
 clients.
 """
-import sys
-import re
 import os
-from os import walk, environ
-from os.path import exists, join, dirname, pardir, relpath
-import yaml
+import re
+import sys
 import warnings
-import pytest
+from os import environ, walk
+from os.path import dirname, exists, join, pardir, relpath
 
-from elasticsearch import TransportError, RequestError, ElasticsearchDeprecationWarning
+import pytest
+import yaml
+
+from elasticsearch import ElasticsearchWarning, RequestError, TransportError
 from elasticsearch.compat import string_types
 from elasticsearch.helpers.test import _get_version
 
@@ -49,6 +50,8 @@ IMPLEMENTED_FEATURES = {
     "default_shards",
     "warnings",
     "allowed_warnings",
+    "contains",
+    "arbitrary_key",
 }
 
 # broken YAML tests on some releases
@@ -56,6 +59,8 @@ SKIP_TESTS = {
     "indices/get_alias/10_basic[23]",
     "indices/simulate_index_template/10_basic[2]",
     "search/aggregation/250_moving_fn[1]",
+    "search/aggregation/250_moving_fn[2]",
+    "search/highlight/20_fvh[3]",
 }
 
 
@@ -145,7 +150,7 @@ class YamlRunner:
         for k in args:
             args[k] = self._resolve(args[k])
 
-        warnings.simplefilter("always", category=ElasticsearchDeprecationWarning)
+        warnings.simplefilter("always", category=ElasticsearchWarning)
         with warnings.catch_warnings(record=True) as caught_warnings:
             try:
                 self.last_response = api(**args)
@@ -163,7 +168,7 @@ class YamlRunner:
         caught_warnings = [
             str(w.message)
             for w in caught_warnings
-            if w.category == ElasticsearchDeprecationWarning
+            if w.category == ElasticsearchWarning
             and str(w.message) not in allowed_warnings
         ]
 
@@ -273,6 +278,14 @@ class YamlRunner:
             else:
                 assert expected == value, "%r does not match %r" % (value, expected)
 
+    def run_contains(self, action):
+        for path, expected in action.items():
+            value = self._lookup(path)  # list[dict[str,str]] is returned
+            expected = self._resolve(expected)  # dict[str, str]
+
+            if expected not in value:
+                raise AssertionError("%s is not contained by %s" % (expected, value))
+
     def _resolve(self, value):
         # resolve variables
         if isinstance(value, string_types) and value.startswith("$"):
@@ -302,6 +315,8 @@ class YamlRunner:
                 step = int(step)
                 assert isinstance(value, list)
                 assert len(value) > step
+            elif step == "_arbitrary_key_":
+                return list(value.keys())[0]
             else:
                 assert step in value
             value = value[step]

@@ -15,21 +15,11 @@
 #  specific language governing permissions and limitations
 #  under the License.
 
-from typing import (
-    Callable,
-    Optional,
-    Union,
-    Collection,
-    Type,
-    Mapping,
-    Any,
-    Dict,
-    List,
-)
+from typing import Any, Callable, Collection, Dict, List, Mapping, Optional, Type, Union
 
 from .connection import Connection
 from .connection_pool import ConnectionPool
-from .serializer import Serializer, Deserializer
+from .serializer import Deserializer, Serializer
 
 def get_host_info(
     node_info: Dict[str, Any], host: Optional[Dict[str, Any]]
@@ -77,6 +67,7 @@ class Transport(object):
         retry_on_status: Collection[int] = ...,
         retry_on_timeout: bool = ...,
         send_get_body_as: str = ...,
+        meta_header: bool = ...,
         **kwargs: Any
     ) -> None: ...
     def add_connection(self, host: Any) -> None: ...
